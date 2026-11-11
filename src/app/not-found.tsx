@@ -1,5 +1,12 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { site } from "@/config/site";
+
+export const metadata: Metadata = {
+  title: "Stránka nenalezena",
+  description: "Požadovaná stránka neexistuje. Vrať se na úvodní stránku VELOR X1.",
+  robots: { index: false },
+};
 
 export default function NotFound() {
   return (

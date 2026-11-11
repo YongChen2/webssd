@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, type PointerEvent } from "react";
-import { formatPrice, site } from "@/config/site";
+import { buyHref, formatPrice, site } from "@/config/site";
 import { play } from "@/lib/sound";
 import { useStore } from "@/lib/store";
 import { capacityStore } from "@/lib/story";
@@ -80,7 +80,7 @@ function Card({ i, selected }: { i: number; selected: boolean }) {
 export function Models() {
   const sel = useStore(capacityStore);
   const m = site.models[sel];
-  const href = site.checkoutUrl ?? "#paticka";
+  const href = buyHref;
   return (
     <section id="modely" aria-labelledby="models-h" className="relative z-10 pb-[14svh] pt-[12svh]">
       <div className="mx-auto max-w-[1400px] px-5 md:px-10">
@@ -115,8 +115,8 @@ export function Models() {
                 </svg>
               </span>
             </a>
-            <p className="text-[12px] text-white/55">Všechny ceny jsou uvedeny včetně DPH.</p>
-            {/* TODO: ZÁSTUPNÉ ceny – nahradit reálnými v site.models; doplnit podmínky dopravy */}
+            <p className="text-[12px] text-white/55">Všechny ceny jsou uvedeny včetně DPH{site.dataVerified ? "" : " a jsou orientační"}.</p>
+            {/* ceny: site.models (zástupné, dokud site.dataVerified = false) */}
           </div>
         </Reveal>
       </div>

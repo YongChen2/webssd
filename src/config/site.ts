@@ -18,6 +18,8 @@ export const site = {
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://webssd-five.vercel.app",
   /** TODO: URL skutečného košíku / e-shopu. Dokud je null, tlačítka „Koupit“ vedou na kontakt v patičce. */
   checkoutUrl: null as string | null,
+  /** Dokud jsou ceny a parametry zástupné, web je označuje jako orientační a nevypisuje je do JSON-LD. Po ověření nastav true. */
+  dataVerified: false as boolean,
 
   product: {
     name: "VELOR X1", // TODO ZÁSTUPNÉ
@@ -45,6 +47,18 @@ export const site = {
     email: "[e-mail]",
     phone: "[telefon]",
     register: "[Zápis v obchodním rejstříku]",
+    complaintAddress: "[Adresa pro reklamace]", // TODO doplnit
+  },
+
+  /** Údaje pro právní stránky – vyplň na jednom místě. */
+  legal: {
+    updated: "[datum účinnosti]",
+    payment: "[platební metody, např. karta, převod, dobírka]",
+    shipping: "[cena dopravy a platby]",
+    deliveryTime: "[dodací lhůta]",
+    carrier: "[dopravce]",
+    processors: "[konkrétní zpracovatelé]",
+    odrUrl: "https://ec.europa.eu/consumers/odr",
   },
 
   nav: [
@@ -81,7 +95,7 @@ export const site = {
     {
       id: "ps5",
       title: "PlayStation 5",
-      text: "Splňuje požadavky Sony na rozšiřující úložiště. Chladič je součástí. TODO: ověřit výšku vůči specifikaci Sony.",
+      text: "Splňuje požadavky Sony na rozšiřující úložiště. Chladič je součástí. Kompatibilita je orientační, před koupí ověř aktuální požadavky Sony.",
     },
     {
       id: "laptop",
@@ -153,6 +167,11 @@ export const site = {
   /** Ilustrativní teploty v zátěži (°C) – TODO nahradit naměřenými hodnotami. */
   thermal: { without: 89, with: 52 },
 } as const;
+
+/** Kam míří „Koupit“: košík, a dokud není, poptávkový formulář. */
+export const buyHref = site.checkoutUrl ?? "#poptavka";
+/** Je kontaktní e-mail skutečný (ne zástupný)? */
+export const hasEmail = site.company.email.includes("@");
 
 export type SiteModel = (typeof site.models)[number];
 

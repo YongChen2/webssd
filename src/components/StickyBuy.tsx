@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { formatPrice, site } from "@/config/site";
+import { buyHref, formatPrice, site } from "@/config/site";
 import { useStore } from "@/lib/store";
 import { capacityStore } from "@/lib/story";
 
@@ -14,7 +14,7 @@ export function StickyBuy() {
 
   useEffect(() => {
     const hero = document.getElementById("top");
-    const targets = ["technologie", "modely", "paticka"].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
+    const targets = ["technologie", "modely", "poptavka", "paticka"].map((id) => document.getElementById(id)).filter(Boolean) as HTMLElement[];
     const io = new IntersectionObserver(([e]) => setPastHero(!e.isIntersecting), { threshold: 0.35 });
     if (hero) io.observe(hero);
     const seen = new Set<string>();
@@ -51,7 +51,7 @@ export function StickyBuy() {
           <span className="ml-1 text-[11px] text-white/55">s DPH</span>
         </p>
         <a
-          href={site.checkoutUrl ?? "#modely"}
+          href={buyHref}
           data-magnetic
           data-tick
           className="rounded-full bg-white px-5 py-2.5 text-[13px] font-medium text-black transition-transform duration-500 ease-fluid active:scale-[0.97]"

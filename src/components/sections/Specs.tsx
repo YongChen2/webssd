@@ -53,7 +53,7 @@ export function Specs() {
           {open ? "Skrýt kompletní parametry" : "Zobrazit kompletní parametry"}
           <span aria-hidden className={`transition-transform duration-500 ${open ? "rotate-180" : ""}`}>↓</span>
         </button>
-        {/* TODO: ZÁSTUPNÉ parametry (TBW, MTBF, IOPS, spotřeba, rozměry) – ověřit podle datasheetu, viz site.specsFull */}
+        {!site.dataVerified && <p className="mt-6 text-[12px] text-white/55">Uvedené parametry jsou orientační.</p>}
       </div>
     </section>
   );
