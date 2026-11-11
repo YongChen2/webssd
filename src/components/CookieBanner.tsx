@@ -20,7 +20,7 @@ export function CookieBanner() {
     <div
       role="dialog"
       aria-label="Nastavení cookies"
-      className="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-[28rem] rounded-3xl bg-[#0b0b10]/95 p-5 ring-1 ring-white/12 backdrop-blur-xl md:inset-x-auto md:bottom-6 md:left-6 md:mx-0"
+      className="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-[28rem] rounded-3xl bg-[#0b0b10]/95 p-5 ring-1 ring-white/12 md:inset-x-auto md:bottom-6 md:left-6 md:mx-0"
     >
       <p className="text-[14px] font-medium text-white">Cookies</p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">

@@ -43,7 +43,7 @@ export function StickyBuy() {
         show ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-6 opacity-0"
       }`}
     >
-      <div className="flex items-center gap-4 rounded-full bg-black/55 py-1.5 pl-5 pr-1.5 ring-1 ring-white/12 backdrop-blur-xl md:gap-6 md:pl-6">
+      <div className="flex items-center gap-4 rounded-full bg-[#0b0b10]/90 py-1.5 pl-5 pr-1.5 ring-1 ring-white/12 md:gap-6 md:pl-6">
         <p className="text-[13px] text-white/80">
           <span className="hidden sm:inline">{site.product.name} · </span>
           {m.capacity}

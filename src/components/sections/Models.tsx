@@ -41,7 +41,7 @@ function Card({ i, selected }: { i: number; selected: boolean }) {
         play("select");
         capacityStore.set(i);
       }}
-      className={`tilt-card group relative overflow-hidden rounded-[1.75rem] p-7 text-left ring-1 transition-[box-shadow,background-color] duration-700 ease-fluid md:p-8 ${
+      className={`tilt-card group relative overflow-hidden rounded-[1.75rem] p-7 text-left ring-1 md:p-8 ${
         selected
           ? "bg-white/[0.07] ring-accent shadow-[0_0_60px_-10px_color-mix(in_oklab,var(--accent)_55%,transparent)]"
           : "bg-white/[0.035] ring-white/10 hover:ring-white/25"

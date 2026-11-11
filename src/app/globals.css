@@ -118,22 +118,18 @@ html.preloading .rise {
 .js .reveal {
   opacity: 0;
   transform: translateY(26px);
-  filter: blur(6px);
   transition:
     opacity 1s var(--ease-fluid) var(--rd, 0ms),
-    transform 1s var(--ease-fluid) var(--rd, 0ms),
-    filter 1s var(--ease-fluid) var(--rd, 0ms);
+    transform 1s var(--ease-fluid) var(--rd, 0ms);
 }
 .js .reveal[data-in] {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .js .reveal {
     opacity: 1;
     transform: none;
-    filter: none;
     transition: none;
   }
 }
@@ -141,11 +137,10 @@ html.preloading .rise {
 /* 3D tilt karty */
 .tilt-card {
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition:
-    transform 0.5s var(--ease-fluid),
-    box-shadow 0.7s var(--ease-fluid),
-    background-color 0.7s var(--ease-fluid);
-  will-change: transform;
+  transition: transform 0.5s var(--ease-fluid);
+}
+.tilt-card:hover {
+  will-change: transform; /* jen dočasně při hoveru */
 }
 @media (prefers-reduced-motion: reduce) {
   .tilt-card {
@@ -268,4 +263,23 @@ html.preloading .rise {
 }
 .scene-ready .hero-poster {
   opacity: 0;
+}
+
+/* nízký tier výkonu: statické rozložení bez pinu a živého 3D */
+.tier-low .motion-only {
+  display: none;
+}
+.tier-low .reduce-only {
+  display: block;
+}
+.tier-low .tech-section {
+  height: auto;
+  overflow: visible;
+}
+
+/* na dotykových zařízeních bez grainu (blend přes celou obrazovku drhne při scrollu) */
+@media (hover: none) {
+  body::after {
+    display: none;
+  }
 }

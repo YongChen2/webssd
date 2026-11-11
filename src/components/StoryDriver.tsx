@@ -54,8 +54,16 @@ export function StoryDriver() {
 
       // úseky přechodu: od vstupu sekce do viewportu po okamžik, kdy je u 35 % výšky
       let segs: { start: number; end: number }[] = [];
+      // rozměry se čtou jen při refreshi, ne ve scroll handleru (žádný layout thrashing)
+      let vhCache = window.innerHeight;
+      let portraitCache = false;
+      const stage = { mid: 0 };
       const compute = () => {
         const vh = window.innerHeight;
+        vhCache = vh;
+        portraitCache = window.innerWidth / vh < 0.9;
+        const st = document.getElementById("modely-stage");
+        if (st) stage.mid = st.getBoundingClientRect().top + window.scrollY + st.offsetHeight / 2;
         segs = ids.map((id) => {
           if (id === "top") return { start: -1, end: -1 };
           const el = document.getElementById(id === "after" ? "kompatibilita" : id);
@@ -69,11 +77,9 @@ export function StoryDriver() {
 
       const poseOf = (id: string): Pose => {
         const base = poses[id];
-        const el = FOLLOW[id] ? document.getElementById(FOLLOW[id]) : null;
-        if (!el) return base;
-        const r = el.getBoundingClientRect();
-        const frac = (r.top + r.height / 2) / window.innerHeight;
-        const baseFrac = window.innerWidth / window.innerHeight < 0.9 ? -0.11 : -0.2;
+        if (!FOLLOW[id] || !stage.mid) return base;
+        const frac = (stage.mid - window.scrollY) / vhCache;
+        const baseFrac = portraitCache ? -0.11 : -0.2;
         return { ...base, y: 0.5 - frac - baseFrac };
       };
 
@@ -162,7 +168,19 @@ export function StoryDriver() {
       return () => io.disconnect();
     });
 
-    return () => mm.revert();
+    // nízký tier (pomalé zařízení): zrušit pin a scroll animace, stránka zůstane statická
+    const onLow = () => {
+      mm.revert();
+      ScrollTrigger.getAll().forEach((t) => t.kill());
+      story.labelsOn = false;
+      ScrollTrigger.refresh();
+    };
+    window.addEventListener("story-low", onLow);
+
+    return () => {
+      window.removeEventListener("story-low", onLow);
+      mm.revert();
+    };
   }, []);
 
   return null;

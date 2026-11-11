@@ -58,8 +58,8 @@ export function Preloader() {
     <div
       role="status"
       aria-label="Načítání"
-      className={`preloader fixed inset-0 z-[200] grid place-items-center bg-[#050507] transition-[opacity,transform,filter] duration-[1000ms] ease-fluid ${
-        phase === "leaving" ? "pointer-events-none -translate-y-6 opacity-0 blur-sm" : ""
+      className={`preloader fixed inset-0 z-[200] grid place-items-center bg-[#050507] transition-[opacity,transform] duration-[1000ms] ease-fluid ${
+        phase === "leaving" ? "pointer-events-none -translate-y-6 opacity-0" : ""
       }`}
     >
       <div className="w-[min(78vw,22rem)] text-center">

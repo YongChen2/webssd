@@ -8,6 +8,8 @@ export type Highway = {
     uAmount: { value: number };
     uColor: { value: THREE.Color };
   };
+  /** 0–1: podíl zobrazených částic (adaptivní kvalita) */
+  setDensity: (f: number) => void;
   dispose: () => void;
 };
 
@@ -119,6 +121,10 @@ export function buildHighway(accent: string, lite: boolean): Highway {
   return {
     object,
     uniforms,
+    setDensity: (f: number) => {
+      lines.geo.setDrawRange(0, Math.floor(n * f) * 2);
+      heads.geo.setDrawRange(0, Math.floor(n * f));
+    },
     dispose: () => {
       lines.geo.dispose();
       lines.mat.dispose();

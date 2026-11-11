@@ -44,7 +44,7 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
       loadStore.set(1); // bez WebGL zůstane CSS záře na pozadí
       return;
     }
-    let pixelRatio = Math.min(window.devicePixelRatio, lite ? 1.25 : 1.75);
+    let pixelRatio = Math.min(window.devicePixelRatio, lite ? 1.5 : 1.75);
     renderer.setPixelRatio(pixelRatio);
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
     renderer.toneMappingExposure = 1.05;
@@ -167,17 +167,63 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
       let lastScroll = window.scrollY;
       let scrollSpeed = 0;
       let hwOffset = 0;
-      let slow = 0;
-      let frames = 0;
+      // adaptivní kvalita: FPS prvních ~2 s určí tier (high / medium / low)
+      type Tier = "high" | "medium" | "low";
+      let tier: Tier = lite ? "medium" : "high";
+      let measuring = true;
+      let mStart = 0;
+      let mFrames = 0;
+      let assessments = 0;
+      let lastSY = window.scrollY;
+      let lastExplode = story.explode;
+      let keepUntil = 0;
+      let lastActive = performance.now();
       const v3 = new THREE.Vector3();
 
+      const poke = () => {
+        keepUntil = performance.now() + 900;
+        if (!running && tier !== "low") wake();
+      };
       const unsubCap = capacityStore.subscribe(() => {
         model.setCapacity(capacities[capacityStore.get()] ?? "");
         if (reducedMotion) draw(0);
+        else poke();
       });
       const unsubSink = heatSinkStore.subscribe(() => {
         if (reducedMotion) draw(0);
+        else poke();
       });
+
+      const applyTier = (t: Tier) => {
+        tier = t;
+        if (t === "medium") {
+          pixelRatio = Math.min(pixelRatio, 1);
+          renderer.setPixelRatio(pixelRatio);
+          renderer.setSize(w, h, false);
+          highway.setDensity(0.5);
+        } else if (t === "low") {
+          // statický poster místo živého 3D; pin a labely se vypnou (viz StoryDriver)
+          renderer.setAnimationLoop(null);
+          running = false;
+          el.style.display = "none";
+          document.documentElement.classList.remove("scene-ready");
+          document.documentElement.classList.add("tier-low");
+          window.dispatchEvent(new Event("story-low"));
+        }
+      };
+      /** Vyhodnotí naměřené FPS a případně sníží tier. */
+      const assess = () => {
+        const fps = mFrames / Math.max(0.5, (performance.now() - mStart) / 1000);
+        assessments++;
+        if (fps < 28) applyTier("low");
+        else if (fps < 46) applyTier(tier === "high" ? "medium" : "low");
+        // po snížení se měří ještě jednou
+        if (tier !== "low" && fps < 46 && assessments < 2) {
+          mStart = performance.now();
+          mFrames = 0;
+          measuring = true;
+        } else measuring = false;
+      };
 
       function draw(dt: number) {
         const t = timer.getElapsed();
@@ -240,6 +286,12 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
 
         renderer.render(scene, camera);
 
+        if (measuring && dt > 0) {
+          if (!mStart) mStart = performance.now();
+          mFrames++;
+          if (performance.now() - mStart > 2000) assess();
+        }
+
         // kotvy popisků pro exploded view
         if (story.labelsOn) {
           root.updateMatrixWorld();
@@ -255,46 +307,45 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
           loadStore.set(1);
           document.documentElement.classList.add("scene-ready");
         }
-
-        // dynamické snížení kvality na slabších zařízeních
-        if (dt > 0 && !reducedMotion) {
-          frames++;
-          slow += dt > 0.024 ? 1 : 0;
-          if (frames === 20) {
-            if (slow > 9 && pixelRatio > 1) {
-              pixelRatio = Math.max(1, pixelRatio - 0.25);
-              renderer.setPixelRatio(pixelRatio);
-              renderer.setSize(w, h, false);
-            }
-            frames = 0;
-            slow = 0;
-          }
-        }
       }
 
       // smyčka běží jen když je karta aktivní
       let running = false;
-      let skip = false;
+      const wakeEvents = ["scroll", "touchstart", "touchmove", "pointerdown", "resize"] as const;
       const wake = () => {
-        window.removeEventListener("scroll", wake);
+        wakeEvents.forEach((e) => window.removeEventListener(e, wake));
+        lastActive = performance.now();
         sync();
       };
+      const sleep = () => {
+        renderer.setAnimationLoop(null);
+        running = false;
+        wakeEvents.forEach((e) => window.addEventListener(e, wake, { passive: true }));
+      };
+      /** Mění se něco, co je vidět? (scroll, doznívání pózy, rozložení, přepínač, částice) */
+      const active = () => {
+        const sy = window.scrollY;
+        let a = sy !== lastSY;
+        lastSY = sy;
+        for (const k of POSE_KEYS) if (Math.abs(story.target[k] - cur[k]) > 0.002) a = true;
+        if (Math.abs(story.explode - lastExplode) > 1e-4) a = true;
+        lastExplode = story.explode;
+        if (Math.abs((heatSinkStore.get() ? 0 : 1) - hoCur) > 0.004) a = true;
+        if (cur.hw > 0.01 || performance.now() < keepUntil) a = true;
+        return a;
+      };
       const sync = () => {
+        if (tier === "low") return;
         running = !document.hidden && !reducedMotion;
         renderer.setAnimationLoop(
           running
             ? (time: number) => {
-                // mimo záběr (disk skrytý) renderer úplně zastavíme a probudí ho až scroll
-                if (cur.o < 0.01 && story.target.o < 0.01) {
-                  renderer.setAnimationLoop(null);
-                  running = false;
-                  window.addEventListener("scroll", wake, { passive: true });
-                  return;
-                }
-                // lite zařízení kreslí 30 fps
-                if (lite) {
-                  skip = !skip;
-                  if (skip) return;
+                // mimo záběr (disk skrytý) se renderer úplně zastaví, probudí ho až scroll
+                if (cur.o < 0.01 && story.target.o < 0.01) return sleep();
+                // na mobilech se kreslí jen při pohybu (on-demand), ne v nekonečné smyčce
+                if (lite && !measuring) {
+                  if (active()) lastActive = performance.now();
+                  else if (performance.now() - lastActive > 700) return sleep();
                 }
                 timer.update(time);
                 draw(Math.min(timer.getDelta(), 0.05));
@@ -326,6 +377,7 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
         unsubCap();
         unsubSink();
         document.removeEventListener("visibilitychange", sync);
+        wakeEvents.forEach((e) => window.removeEventListener(e, wake));
         window.removeEventListener("pointermove", onMove);
         model.dispose();
         highway.dispose();
