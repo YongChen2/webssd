@@ -21,6 +21,10 @@ const productLd = {
   sku: site.product.sku,
   category: "SSD disky",
   brand: { "@type": "Brand", name: site.brand },
+  warranty: {
+    "@type": "WarrantyPromise",
+    durationOfWarranty: { "@type": "QuantitativeValue", value: site.product.warrantyYears, unitCode: "ANN" },
+  },
   offers: {
     "@type": "AggregateOffer",
     priceCurrency: "CZK",

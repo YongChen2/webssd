@@ -2,11 +2,17 @@
  * Jediné místo, kde se mění značka, texty, ceny a firemní údaje.
  * Vše označené ZÁSTUPNÉ / TODO nahraď reálnými údaji před spuštěním.
  */
+/** Česky správný tvar: 1 rok, 2–4 roky, 5+ let. */
+export const yearsText = (n: number) => `${n} ${n === 1 ? "rok" : n >= 2 && n <= 4 ? "roky" : "let"}`;
+
+/** Délka záruky – jediné místo, odkud ji čte celý web. */
+const WARRANTY_YEARS = 2;
+
 export const site = {
   brand: "VELOR", // TODO ZÁSTUPNÉ – [NÁZEV ZNAČKY]
   slogan: "Rychlost, která nečeká.", // TODO ZÁSTUPNÉ – [SLOGAN]
   description:
-    "NVMe M.2 SSD nové generace. Až 7 400 MB/s, chlazení z jednoho kusu hliníku, pět let záruka.",
+    "NVMe M.2 SSD nové generace. Až 7 400 MB/s, chlazení z jednoho kusu hliníku, záruka " + yearsText(WARRANTY_YEARS) + ".",
   accent: "#3B82F6", // [BARVA]
   // TODO: po připojení vlastní domény nastav NEXT_PUBLIC_SITE_URL (Vercel → Settings → Environment Variables)
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://webssd-five.vercel.app",
@@ -19,7 +25,8 @@ export const site = {
     interfaceLabel: "PCIe 4.0 NVMe · M.2 2280",
     readSpeed: 7400, // MB/s
     writeSpeed: 6900, // MB/s – TODO ZÁSTUPNÉ
-    warrantyYears: 5, // TODO ZÁSTUPNÉ
+    warrantyYears: WARRANTY_YEARS,
+    warrantyText: yearsText(WARRANTY_YEARS),
   },
 
   /** TODO: ZÁSTUPNÉ CENY v Kč včetně DPH – nahraď skutečným ceníkem. */
@@ -92,7 +99,7 @@ export const site = {
     ["Sekvenční zápis", "až 6 900 MB/s"],
     ["Paměť NAND", "3D TLC, 176 vrstev"],
     ["Chlazení", "Hliníkový chladič + grafenová vrstva"],
-    ["Záruka", "5 let"],
+    ["Záruka", yearsText(WARRANTY_YEARS)],
   ] as [string, string][],
   specsFull: [
     ["Náhodné čtení 4K", "až 1 100 000 IOPS"],
@@ -119,7 +126,7 @@ export const site = {
     },
     {
       q: "Jaká je záruka?",
-      a: "Na disk poskytujeme záruku 5 let. Spotřebitelům navíc zůstává zákonná odpovědnost za vady, viz stránka Reklamace a záruka.",
+      a: `Na disk poskytujeme záruku ${yearsText(WARRANTY_YEARS)}. Spotřebitelům zůstávají zachována zákonná práva z vadného plnění, viz stránka Reklamace a záruka.`,
     },
     {
       q: "Jak rychlý disk skutečně je?",

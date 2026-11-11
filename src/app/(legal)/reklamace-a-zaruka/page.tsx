@@ -14,11 +14,11 @@ export default function Page() {
     <LegalPage title="Reklamace a záruka" updated="[datum]">
       <h2>1. Záruka</h2>
       <p>
-        Na disk {site.product.name} poskytuje prodávající záruku <strong>{site.product.warrantyYears} let</strong> od převzetí zboží. Záruka se vztahuje na výrobní vady a na opotřebení NAND paměti v rozsahu limitu TBW uvedeného u daného modelu. [ověřit a upravit podle záručních podmínek výrobce]
+        Na disk {site.product.name} poskytuje prodávající záruku <strong>{site.product.warrantyText}</strong> od převzetí zboží. Záruka se vztahuje na výrobní vady a na opotřebení NAND paměti v rozsahu limitu TBW uvedeného u daného modelu. [ověřit a upravit podle záručních podmínek výrobce]
       </p>
 
       <h2>2. Práva spotřebitele z vadného plnění</h2>
-      <p>Spotřebiteli zůstávají zachována zákonná práva z vadného plnění po dobu <strong>24 měsíců</strong> od převzetí zboží, a to bez ohledu na delší záruku. Při vadě zboží má spotřebitel právo na jeho opravu nebo výměnu, při nemožnosti či opakované vadě na přiměřenou slevu nebo odstoupení od smlouvy.</p>
+      <p>Spotřebiteli zůstávají zachována zákonná práva z vadného plnění po dobu <strong>24 měsíců</strong> od převzetí zboží; záruka {site.product.warrantyText} tato práva doplňuje, nenahrazuje je. Při vadě zboží má spotřebitel právo na jeho opravu nebo výměnu, při nemožnosti či opakované vadě na přiměřenou slevu nebo odstoupení od smlouvy.</p>
 
       <h2>3. Jak reklamovat</h2>
       <ul>

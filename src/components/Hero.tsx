@@ -28,7 +28,7 @@ export function Hero() {
   const stats = [
     { value: formatNumber(p.readSpeed), unit: "MB/s", label: "Čtení" },
     { value: formatNumber(p.writeSpeed), unit: "MB/s", label: "Zápis" },
-    { value: String(p.warrantyYears), unit: p.warrantyYears >= 5 ? "let" : "roky", label: "Záruka" },
+    { value: String(p.warrantyYears), unit: p.warrantyText.split(" ")[1], label: "Záruka" },
   ];
 
   return (

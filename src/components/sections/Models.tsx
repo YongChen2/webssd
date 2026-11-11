@@ -67,7 +67,7 @@ function Card({ i, selected }: { i: number; selected: boolean }) {
         <ul className="mt-6 space-y-1.5 text-[13px] text-white/55">
           <li>Čtení až {site.product.readSpeed.toLocaleString("cs-CZ")} MB/s</li>
           <li>{m.tbw}</li>
-          <li>Záruka {site.product.warrantyYears} let</li>
+          <li>Záruka {site.product.warrantyText}</li>
         </ul>
         <p className={`mt-7 text-[13px] transition-colors duration-500 ${selected ? "text-accent" : "text-white/55 group-hover:text-white"}`}>
           {selected ? "Vybráno ✓" : "Vybrat"}
