@@ -1,12 +1,6 @@
-"use client";
-
-import dynamic from "next/dynamic";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import type { CSSProperties } from "react";
 import { formatNumber, site } from "@/config/site";
 import { BuyButton } from "./BuyButton";
-
-// Three.js se stáhne až po vykreslení stránky (samostatný chunk)
-const SsdScene = dynamic(() => import("./three/SsdScene"), { ssr: false });
 
 function Headline({ text }: { text: string }) {
   let i = 0;
@@ -30,23 +24,6 @@ function Headline({ text }: { text: string }) {
 }
 
 export function Hero() {
-  const [scene, setScene] = useState<null | { lite: boolean; reduced: boolean }>(null);
-  const [ready, setReady] = useState(false);
-  const onReady = useCallback(() => setReady(true), []);
-
-  useEffect(() => {
-    const start = () =>
-      setScene({
-        lite: window.matchMedia("(max-width: 767px)").matches || (navigator.hardwareConcurrency ?? 8) <= 4,
-        reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,
-      });
-    const idle = window.requestIdleCallback?.(start, { timeout: 1200 }) ?? window.setTimeout(start, 300);
-    return () => {
-      window.cancelIdleCallback?.(idle);
-      clearTimeout(idle);
-    };
-  }, []);
-
   const p = site.product;
   const stats = [
     { value: formatNumber(p.readSpeed), unit: "MB/s", label: "Čtení" },
@@ -60,20 +37,6 @@ export function Hero() {
       <div aria-hidden className="pointer-events-none absolute inset-0">
         <div className="absolute left-1/2 top-[58%] h-[70vmin] w-[120vmin] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--accent)_22%,transparent),transparent)]" />
         <div className="absolute inset-x-0 top-0 h-[45%] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(255,255,255,0.06),transparent)]" />
-      </div>
-
-      <div
-        className={`absolute inset-0 transition-opacity duration-[1600ms] ease-fluid ${ready ? "opacity-100" : "opacity-0"}`}
-      >
-        {scene && (
-          <SsdScene
-            accent={site.accent}
-            brand={site.brand}
-            lite={scene.lite}
-            reducedMotion={scene.reduced}
-            onReady={onReady}
-          />
-        )}
       </div>
 
       <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col items-center px-5 pt-[clamp(7rem,17vh,11rem)] text-center md:px-10">
@@ -93,10 +56,10 @@ export function Hero() {
           <dl className="grid w-full grid-cols-3 md:w-auto md:gap-x-14">
             {stats.map((s) => (
               <div key={s.label} className="border-l border-white/10 pl-3.5 md:pl-5">
-                <dt className="text-[10px] uppercase tracking-[0.2em] text-white/40">{s.label}</dt>
+                <dt className="text-[10px] uppercase tracking-[0.2em] text-white/55">{s.label}</dt>
                 <dd className="mt-1.5 whitespace-nowrap text-[clamp(1.25rem,2.4vw,2.1rem)] font-light tracking-tight text-white tabular-nums">
                   {s.value}
-                  <span className="ml-1.5 text-[0.45em] font-normal tracking-normal text-white/45">{s.unit}</span>
+                  <span className="ml-1.5 text-[0.45em] font-normal tracking-normal text-white/60">{s.unit}</span>
                 </dd>
               </div>
             ))}

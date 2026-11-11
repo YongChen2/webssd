@@ -80,3 +80,169 @@ body::after {
     animation: none;
   }
 }
+
+/* ---------- pomocné třídy příběhu ---------- */
+html {
+  scroll-padding-top: 5rem;
+}
+html.preloading {
+  overflow: hidden;
+}
+html.preloading .char,
+html.preloading .rise {
+  animation-play-state: paused;
+}
+
+/* pinnutá scéna jen s pohybem, statická varianta pro reduced-motion */
+.reduce-only {
+  display: none;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .tech-section {
+    height: 100svh;
+    overflow: hidden;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .motion-only {
+    display: none;
+  }
+  .reduce-only {
+    display: block;
+  }
+}
+
+/* odhalení při vstupu do viewportu */
+.js .reveal {
+  opacity: 0;
+  transform: translateY(26px);
+  filter: blur(6px);
+  transition:
+    opacity 1s var(--ease-fluid) var(--rd, 0ms),
+    transform 1s var(--ease-fluid) var(--rd, 0ms),
+    filter 1s var(--ease-fluid) var(--rd, 0ms);
+}
+.js .reveal[data-in] {
+  opacity: 1;
+  transform: none;
+  filter: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .js .reveal {
+    opacity: 1;
+    transform: none;
+    filter: none;
+    transition: none;
+  }
+}
+
+/* 3D tilt karty */
+.tilt-card {
+  transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition:
+    transform 0.5s var(--ease-fluid),
+    box-shadow 0.7s var(--ease-fluid),
+    background-color 0.7s var(--ease-fluid);
+  will-change: transform;
+}
+@media (prefers-reduced-motion: reduce) {
+  .tilt-card {
+    transform: none;
+  }
+}
+
+/* posuvník */
+.range {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 28px;
+  background: transparent;
+  cursor: pointer;
+}
+.range::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.range::-moz-range-track {
+  height: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.14);
+}
+.range::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  height: 20px;
+  width: 20px;
+  margin-top: -8.5px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+.range::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 0 5px color-mix(in oklab, var(--accent) 35%, transparent);
+}
+
+/* vlastní kurzor (jen myš) */
+.has-cursor,
+.has-cursor * {
+  cursor: none !important;
+}
+.cursor-dot,
+.cursor-ring {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 300;
+  pointer-events: none;
+  opacity: 0;
+}
+.cursor-dot {
+  width: 6px;
+  height: 6px;
+  margin: -3px 0 0 -3px;
+  border-radius: 50%;
+  background: #fff;
+}
+.cursor-ring {
+  width: 36px;
+  height: 36px;
+  margin: -18px 0 0 -18px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  transition:
+    width 0.45s var(--ease-fluid),
+    height 0.45s var(--ease-fluid),
+    margin 0.45s var(--ease-fluid),
+    background-color 0.45s,
+    border-color 0.45s,
+    scale 0.3s;
+}
+.cursor-ring[data-hover="1"] {
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border-color: var(--accent);
+  background-color: color-mix(in oklab, var(--accent) 14%, transparent);
+}
+.cursor-ring[data-down="1"] {
+  scale: 0.82;
+}
+
+/* přechody mezi stránkami (View Transitions) */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: 0.45s;
+  animation-timing-function: var(--ease-fluid);
+}
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}

@@ -1,7 +1,9 @@
-export function BuyButton({ small = false }: { small?: boolean }) {
+export function BuyButton({ small = false, href = "#modely" }: { small?: boolean; href?: string }) {
   return (
     <a
-      href="#modely"
+      href={href}
+      data-magnetic
+      data-tick
       className={`group inline-flex items-center rounded-full bg-white font-medium text-black transition-transform duration-500 ease-fluid active:scale-[0.97] ${
         small ? "gap-2 py-1 pl-4 pr-1 text-[13px]" : "gap-3 py-1.5 pl-6 pr-1.5 text-[15px]"
       }`}
