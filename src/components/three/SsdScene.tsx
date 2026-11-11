@@ -85,12 +85,12 @@ export default function SsdScene({ accent, brand, lite, reducedMotion, onReady }
       mouse.ty = (e.clientY / window.innerHeight) * 2 - 1;
     };
 
-    const clock = new THREE.Clock();
+    const timer = new THREE.Timer();
     let angle = -0.5;
     let first = true;
 
     function draw(dt: number) {
-      const t = clock.elapsedTime;
+      const t = timer.getElapsed();
       mouse.x += (mouse.tx - mouse.x) * Math.min(1, dt * 4);
       mouse.y += (mouse.ty - mouse.y) * Math.min(1, dt * 4);
 
@@ -121,9 +121,14 @@ export default function SsdScene({ accent, brand, lite, reducedMotion, onReady }
     let inView = true;
     const sync = () => {
       const run = inView && !document.hidden && !reducedMotion;
-      if (run) clock.start();
-      else clock.stop();
-      renderer.setAnimationLoop(run ? () => draw(Math.min(clock.getDelta(), 0.05)) : null);
+      renderer.setAnimationLoop(
+        run
+          ? (time: number) => {
+              timer.update(time);
+              draw(Math.min(timer.getDelta(), 0.05));
+            }
+          : null,
+      );
     };
     const io = new IntersectionObserver(([e]) => {
       inView = e.isIntersecting;

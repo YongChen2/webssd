@@ -1,7 +1,8 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // náhled z telefonu / jiného zařízení v domácí síti (jen dev)
+  allowedDevOrigins: ["192.168.*.*"],
   cacheComponents: true,
   partialPrefetching: true,
   turbopack: {
