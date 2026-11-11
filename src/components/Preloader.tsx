@@ -11,6 +11,10 @@ export function Preloader() {
   const bar = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      document.documentElement.classList.remove("preloading");
+      return; // při reduced-motion se preloader přeskočí (skrývá ho CSS)
+    }
     const t0 = performance.now();
     let shown = 0;
     let raf = 0;
@@ -24,20 +28,24 @@ export function Preloader() {
     };
     const step = () => {
       const target = loadStore.get();
-      shown += (target - shown) * 0.12 + 0.002;
-      shown = Math.min(shown, target);
+      const elapsed0 = performance.now() - t0;
+      // zobrazené procento = skutečný postup 3D, po 0,9 s dotažené k 100 %, ať se nezasekne
+      const goal = elapsed0 > 900 ? 1 : target;
+      shown += (goal - shown) * 0.18 + 0.003;
+      shown = Math.min(shown, goal);
       const pct = Math.round(shown * 100);
       if (num.current) num.current.textContent = String(pct).padStart(2, "0");
       if (bar.current) bar.current.style.transform = `scaleX(${shown})`;
-      // minimálně ~0,8 s, ať se přechod nezdá useknutý
-      if (shown >= 0.995 && performance.now() - t0 > 800) {
+      // 3D je vylepšení, ne podmínka: preloader trvá nejvýš ~1,3 s a pod ním už je vidět poster/hero
+      const elapsed = performance.now() - t0;
+      if ((shown >= 0.995 && elapsed > 350) || elapsed > 1300) {
         leave();
         return;
       }
       raf = requestAnimationFrame(step);
     };
     raf = requestAnimationFrame(step);
-    const failsafe = window.setTimeout(leave, 9000);
+    const failsafe = window.setTimeout(leave, 2500);
     return () => {
       cancelAnimationFrame(raf);
       clearTimeout(failsafe);

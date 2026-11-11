@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from "next";
 import type { CSSProperties } from "react";
 import { ViewTransition } from "react";
 import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
 import { site } from "@/config/site";
 import { AnalyticsGate } from "@/components/AnalyticsGate";
 import { CookieBanner } from "@/components/CookieBanner";
@@ -34,14 +33,14 @@ export const metadata: Metadata = {
 export const viewport: Viewport = { themeColor: "#050507", colorScheme: "dark" };
 
 // `js` odemyká animace odhalování; `preloading` drží intro hera, dokud se nenačte 3D (jen na úvodní stránce)
-const bootScript = `(function(d){d.classList.add('js');if(location.pathname==='/'){d.classList.add('preloading');setTimeout(function(){d.classList.remove('preloading')},9000)}})(document.documentElement)`;
+const bootScript = `(function(d){d.classList.add('js');if(location.pathname==='/'&&!matchMedia('(prefers-reduced-motion:reduce)').matches){d.classList.add('preloading');setTimeout(function(){d.classList.remove('preloading')},2500)}})(document.documentElement)`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html
       lang="cs"
       suppressHydrationWarning
-      className={`${GeistSans.variable} ${GeistMono.variable}`}
+      className={GeistSans.variable}
       style={{ "--accent": site.accent } as CSSProperties}
     >
       <body className="font-sans">

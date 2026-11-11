@@ -2,10 +2,13 @@
 
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { RoomEnvironment } from "three/examples/jsm/environments/RoomEnvironment.js";
 import { capacityStore, heatSinkStore, loadStore, PART_KEYS, story, type Pose } from "@/lib/story";
 import { buildHighway } from "./buildHighway";
 import { buildSsd, HS_LEN, HS_X } from "./buildSsd";
+import { buildStudioEnv } from "./studioEnv";
+
+/** Uvolní hlavní vlákno mezi kroky inicializace, aby nevznikl jeden dlouhý task. */
+const yieldFrame = () => new Promise<void>((r) => requestAnimationFrame(() => setTimeout(r, 0)));
 
 type Props = {
   accent: string;
@@ -47,13 +50,9 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
     renderer.toneMappingExposure = 1.05;
     el.appendChild(renderer.domElement);
 
-    // HDRI studiové světlo (procedurální, bez stahování souborů)
     const scene = new THREE.Scene();
     const pmrem = new THREE.PMREMGenerator(renderer);
-    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
-    scene.environment = env;
-    scene.environmentIntensity = 0.95;
-    loadStore.set(0.55);
+    let env: THREE.Texture | null = null;
 
     const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
 
@@ -63,228 +62,293 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
     rim.position.set(-6, 2.5, -6);
     scene.add(key, rim);
 
-    const model = buildSsd({ accent, brand, capacity: capacities[capacityStore.get()] ?? "", lite });
-    const highway = buildHighway(accent, lite);
-    scene.add(highway.object);
-    loadStore.set(0.8);
+    let disposed = false;
+    let inner: (() => void) | undefined;
+    const studio = buildStudioEnv(accent);
 
-    const root = new THREE.Group(); // pozice v záběru
-    const tilt = new THREE.Group(); // náklon + reakce na myš
-    const spin = new THREE.Group(); // rotace kolem vlastní osy
-    spin.add(model.group);
-    tilt.add(spin);
-    root.add(tilt);
-    scene.add(root);
+    // inicializace po krocích (prostředí → model → částice), každý v jiném snímku
+    void (async () => {
+      await yieldFrame();
+      if (disposed) return;
+      env = pmrem.fromScene(studio.scene, 0.04, 0.1, 60, { size: 128 }).texture;
+      studio.dispose();
+      scene.environment = env;
+      scene.environmentIntensity = 1.1;
+      loadStore.set(0.55);
+      await yieldFrame();
+      if (disposed) return;
 
-    // kontaktní stín pod diskem
-    const shadowTex = (() => {
-      const c = document.createElement("canvas");
-      c.width = c.height = 128;
-      const g = c.getContext("2d")!;
-      const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
-      grad.addColorStop(0, "rgba(0,0,0,0.55)");
-      grad.addColorStop(1, "rgba(0,0,0,0)");
-      g.fillStyle = grad;
-      g.fillRect(0, 0, 128, 128);
-      return new THREE.CanvasTexture(c);
-    })();
-    const shadow = new THREE.Mesh(
-      new THREE.PlaneGeometry(10, 3.4).rotateX(-Math.PI / 2),
-      new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, opacity: 0.55 }),
-    );
-    shadow.position.y = -1.1;
-    spin.add(shadow);
-
-    // aktuální (vyhlazená) póza
-    const cur = { ...story.target };
-    let hoCur = heatSinkStore.get() ? 0 : 1;
-    let hotCur = hoCur;
-
-    let w = 1;
-    let h = 1;
-    let visW = 1;
-    let visH = 1;
-    let baseY = 0;
-    let dist = 15;
-    let portrait = false;
-    let heatTime = 0;
-    const resize = () => {
-      w = el.clientWidth;
-      h = el.clientHeight;
-      if (!w || !h) return;
-      renderer.setSize(w, h, false);
-      const aspect = w / h;
-      portrait = aspect < 0.9;
-      camera.aspect = aspect;
-      const k = 2 * Math.tan(THREE.MathUtils.degToRad(14));
-      // disk musí být vidět celý: na šířku ~10.5 j., na výšku ~7 j.
-      dist = Math.max((portrait ? 8.6 : 14) / (aspect * k), 13);
-      camera.position.set(0, 0, dist);
-      camera.updateProjectionMatrix();
-      visH = dist * k;
-      visW = visH * aspect;
-      baseY = portrait ? -visH * 0.11 : -visH * 0.2;
-      highway.object.scale.setScalar(dist / 16);
-      if (reducedMotion || !running) draw(0);
-    };
-
-    const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
-    const onMove = (e: PointerEvent) => {
-      if (e.pointerType === "touch") return;
-      mouse.tx = (e.clientX / window.innerWidth) * 2 - 1;
-      mouse.ty = (e.clientY / window.innerHeight) * 2 - 1;
-    };
-
-    const timer = new THREE.Timer();
-    let angle = -0.5;
-    let first = true;
-    let intro = reducedMotion ? 1 : 0;
-    const t0 = performance.now();
-    let lastScroll = window.scrollY;
-    let scrollSpeed = 0;
-    let hwOffset = 0;
-    let slow = 0;
-    let frames = 0;
-    const v3 = new THREE.Vector3();
-
-    const unsubCap = capacityStore.subscribe(() => {
-      model.setCapacity(capacities[capacityStore.get()] ?? "");
-      if (reducedMotion) draw(0);
-    });
-    const unsubSink = heatSinkStore.subscribe(() => {
-      if (reducedMotion) draw(0);
-    });
-
-    function draw(dt: number) {
-      const t = timer.getElapsed();
-      const damp = 1 - Math.exp(-dt * (reducedMotion ? 60 : 7));
-      for (const k of POSE_KEYS) cur[k] += (story.target[k] - cur[k]) * (dt === 0 ? 1 : damp);
-
-      intro = reducedMotion ? 1 : Math.min(1, (performance.now() - t0) / 1400);
-      el!.style.opacity = String(Math.min(1, Math.max(0, cur.o)) * intro);
-      if (cur.o < 0.01) return; // mimo záběr nic nevykreslujeme
-
-      mouse.x += (mouse.tx - mouse.x) * Math.min(1, dt * 4);
-      mouse.y += (mouse.ty - mouse.y) * Math.min(1, dt * 4);
-
-      if (!reducedMotion) angle += dt * 0.22 * cur.spin;
-      // plynulý přechod z volné rotace na pevný úhel (nejkratší cestou)
-      const want = cur.ry + story.extraYaw;
-      const diff = Math.atan2(Math.sin(want - angle), Math.cos(want - angle));
-      spin.rotation.y = angle + diff * (1 - cur.spin);
-
-      const since = (performance.now() - story.pulseAt) / 1000;
-      const pulse = since < 0.7 ? 1 + Math.sin(since * 30) * Math.exp(-since * 8) * 0.03 : 1;
-
-      tilt.rotation.x = 0.78 + cur.rx + mouse.y * 0.16;
-      tilt.rotation.y = mouse.x * 0.3;
-      tilt.rotation.z = (portrait ? -0.95 : -0.1) + cur.rz + mouse.x * 0.05;
-      root.position.x = cur.x * visW + mouse.x * 0.15;
-      root.position.y = baseY + cur.y * visH;
-      root.scale.setScalar(cur.s * pulse);
-      if (!reducedMotion) spin.position.y = Math.sin(t * 0.8) * 0.06;
-
-      // rozložení + chladič (teplotní mapa)
-      const hoTarget = heatSinkStore.get() ? 0 : 1;
-      hoCur += (hoTarget - hoCur) * (dt === 0 ? 1 : 1 - Math.exp(-dt * 3.2));
-      hotCur += (hoTarget - hotCur) * (dt === 0 ? 1 : 1 - Math.exp(-dt * 2.2));
-      model.layout(story.explode, hoCur);
-      heatTime += dt;
-      model.setHeat(cur.heat, hotCur, heatTime);
-
-      // světelný pruh: 2 s přejezd, pak pauza
-      const cycle = (t % 5.5) / 2.2;
-      const p = reducedMotion ? 0.62 : -0.25 + Math.min(cycle, 1.5) * 1.5;
-      model.edgeMaterial.uniforms.uPos.value = p;
-      const visible = p > -0.05 && p < 1.05;
-      model.sweepLight.intensity = visible ? 14 : 0;
-      model.sweepLight.position.x = (p - 0.5) * HS_LEN + HS_X;
-
-      // datová dálnice: rychlost toku sleduje rychlost scrollu
-      highway.object.visible = cur.hw > 0.01;
-      if (highway.object.visible) {
-        const sy = window.scrollY;
-        const inst = dt > 0 ? Math.abs(sy - lastScroll) / dt : 0;
-        lastScroll = sy;
-        scrollSpeed += (inst - scrollSpeed) * Math.min(1, dt * 5);
-        const boost = Math.min(scrollSpeed / 1400, 4);
-        hwOffset += (4 + boost * 16) * dt;
-        highway.uniforms.uOffset.value = hwOffset;
-        highway.uniforms.uSpeed.value = 0.35 + boost;
-        highway.uniforms.uAmount.value = cur.hw;
+      const model = buildSsd({ accent, brand, capacity: capacities[capacityStore.get()] ?? "", lite });
+      loadStore.set(0.75);
+      if (disposed) return model.dispose();
+      await yieldFrame();
+      const highway = buildHighway(accent, lite);
+      scene.add(highway.object);
+      loadStore.set(0.85);
+      await yieldFrame();
+      if (disposed) {
+        model.dispose();
+        highway.dispose();
+        return;
       }
 
-      renderer.render(scene, camera);
+      const root = new THREE.Group(); // pozice v záběru
+      const tilt = new THREE.Group(); // náklon + reakce na myš
+      const spin = new THREE.Group(); // rotace kolem vlastní osy
+      spin.add(model.group);
+      tilt.add(spin);
+      root.add(tilt);
+      scene.add(root);
 
-      // kotvy popisků pro exploded view
-      if (story.labelsOn) {
-        root.updateMatrixWorld();
-        for (const k of PART_KEYS) {
-          model.anchors[k].getWorldPosition(v3).project(camera);
-          story.anchors[k].x = (v3.x * 0.5 + 0.5) * w;
-          story.anchors[k].y = (-v3.y * 0.5 + 0.5) * h;
-        }
-      }
-
-      if (first) {
-        first = false;
-        loadStore.set(1);
-      }
-
-      // dynamické snížení kvality na slabších zařízeních
-      if (dt > 0 && !reducedMotion) {
-        frames++;
-        slow += dt > 0.026 ? 1 : 0;
-        if (frames === 45) {
-          if (slow > 28 && pixelRatio > 1) {
-            pixelRatio = Math.max(1, pixelRatio - 0.25);
-            renderer.setPixelRatio(pixelRatio);
-            renderer.setSize(w, h, false);
-          }
-          frames = 0;
-          slow = 0;
-        }
-      }
-    }
-
-    // smyčka běží jen když je karta aktivní
-    let running = false;
-    const sync = () => {
-      running = !document.hidden && !reducedMotion;
-      renderer.setAnimationLoop(
-        running
-          ? (time: number) => {
-              timer.update(time);
-              draw(Math.min(timer.getDelta(), 0.05));
-            }
-          : null,
+      // kontaktní stín pod diskem
+      const shadowTex = (() => {
+        const c = document.createElement("canvas");
+        c.width = c.height = 128;
+        const g = c.getContext("2d")!;
+        const grad = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+        grad.addColorStop(0, "rgba(0,0,0,0.55)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+        g.fillStyle = grad;
+        g.fillRect(0, 0, 128, 128);
+        return new THREE.CanvasTexture(c);
+      })();
+      const shadow = new THREE.Mesh(
+        new THREE.PlaneGeometry(10, 3.4).rotateX(-Math.PI / 2),
+        new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, depthWrite: false, opacity: 0.55 }),
       );
-    };
-    document.addEventListener("visibilitychange", sync);
+      shadow.position.y = -1.1;
+      spin.add(shadow);
 
-    const ro = new ResizeObserver(resize);
-    ro.observe(el);
-    resize();
-    if (reducedMotion) draw(0);
-    else window.addEventListener("pointermove", onMove, { passive: true });
-    sync();
+      // aktuální (vyhlazená) póza
+      const cur = { ...story.target };
+      let hoCur = heatSinkStore.get() ? 0 : 1;
+      let hotCur = hoCur;
+
+      let w = 1;
+      let h = 1;
+      let visW = 1;
+      let visH = 1;
+      let baseY = 0;
+      let dist = 15;
+      let portrait = false;
+      let heatTime = 0;
+      const resize = () => {
+        w = el.clientWidth;
+        h = el.clientHeight;
+        if (!w || !h) return;
+        renderer.setSize(w, h, false);
+        const aspect = w / h;
+        portrait = aspect < 0.9;
+        camera.aspect = aspect;
+        const k = 2 * Math.tan(THREE.MathUtils.degToRad(14));
+        // disk musí být vidět celý: na šířku ~10.5 j., na výšku ~7 j.
+        dist = Math.max((portrait ? 8.6 : 14) / (aspect * k), 13);
+        camera.position.set(0, 0, dist);
+        camera.updateProjectionMatrix();
+        visH = dist * k;
+        visW = visH * aspect;
+        baseY = portrait ? -visH * 0.11 : -visH * 0.2;
+        highway.object.scale.setScalar(dist / 16);
+        if (reducedMotion || !running) draw(0);
+      };
+
+      const mouse = { x: 0, y: 0, tx: 0, ty: 0 };
+      const onMove = (e: PointerEvent) => {
+        if (e.pointerType === "touch") return;
+        mouse.tx = (e.clientX / window.innerWidth) * 2 - 1;
+        mouse.ty = (e.clientY / window.innerHeight) * 2 - 1;
+      };
+
+      const timer = new THREE.Timer();
+      let angle = -0.5;
+      let first = true;
+      let intro = reducedMotion ? 1 : 0;
+      const t0 = performance.now();
+      let lastScroll = window.scrollY;
+      let scrollSpeed = 0;
+      let hwOffset = 0;
+      let slow = 0;
+      let frames = 0;
+      const v3 = new THREE.Vector3();
+
+      const unsubCap = capacityStore.subscribe(() => {
+        model.setCapacity(capacities[capacityStore.get()] ?? "");
+        if (reducedMotion) draw(0);
+      });
+      const unsubSink = heatSinkStore.subscribe(() => {
+        if (reducedMotion) draw(0);
+      });
+
+      function draw(dt: number) {
+        const t = timer.getElapsed();
+        const damp = 1 - Math.exp(-dt * (reducedMotion ? 60 : 7));
+        for (const k of POSE_KEYS) cur[k] += (story.target[k] - cur[k]) * (dt === 0 ? 1 : damp);
+
+        intro = reducedMotion ? 1 : Math.min(1, (performance.now() - t0) / 1400);
+        el!.style.opacity = String(Math.min(1, Math.max(0, cur.o)) * intro);
+        if (cur.o < 0.01) return; // mimo záběr nic nevykreslujeme
+
+        mouse.x += (mouse.tx - mouse.x) * Math.min(1, dt * 4);
+        mouse.y += (mouse.ty - mouse.y) * Math.min(1, dt * 4);
+
+        if (!reducedMotion) angle += dt * 0.22 * cur.spin;
+        // plynulý přechod z volné rotace na pevný úhel (nejkratší cestou)
+        const want = cur.ry + story.extraYaw;
+        const diff = Math.atan2(Math.sin(want - angle), Math.cos(want - angle));
+        spin.rotation.y = angle + diff * (1 - cur.spin);
+
+        const since = (performance.now() - story.pulseAt) / 1000;
+        const pulse = since < 0.7 ? 1 + Math.sin(since * 30) * Math.exp(-since * 8) * 0.03 : 1;
+
+        tilt.rotation.x = 0.78 + cur.rx + mouse.y * 0.16;
+        tilt.rotation.y = mouse.x * 0.3;
+        tilt.rotation.z = (portrait ? -0.95 : -0.1) + cur.rz + mouse.x * 0.05;
+        root.position.x = cur.x * visW + mouse.x * 0.15;
+        root.position.y = baseY + cur.y * visH;
+        root.scale.setScalar(cur.s * pulse);
+        if (!reducedMotion) spin.position.y = Math.sin(t * 0.8) * 0.06;
+
+        // rozložení + chladič (teplotní mapa)
+        const hoTarget = heatSinkStore.get() ? 0 : 1;
+        hoCur += (hoTarget - hoCur) * (dt === 0 ? 1 : 1 - Math.exp(-dt * 3.2));
+        hotCur += (hoTarget - hotCur) * (dt === 0 ? 1 : 1 - Math.exp(-dt * 2.2));
+        model.layout(story.explode, hoCur);
+        heatTime += dt;
+        model.setHeat(cur.heat, hotCur, heatTime);
+
+        // světelný pruh: 2 s přejezd, pak pauza
+        const cycle = (t % 5.5) / 2.2;
+        const p = reducedMotion ? 0.62 : -0.25 + Math.min(cycle, 1.5) * 1.5;
+        model.edgeMaterial.uniforms.uPos.value = p;
+        const visible = p > -0.05 && p < 1.05;
+        model.sweepLight.intensity = visible ? 14 : 0;
+        model.sweepLight.position.x = (p - 0.5) * HS_LEN + HS_X;
+
+        // datová dálnice: rychlost toku sleduje rychlost scrollu
+        highway.object.visible = cur.hw > 0.01;
+        if (highway.object.visible) {
+          const sy = window.scrollY;
+          const inst = dt > 0 ? Math.abs(sy - lastScroll) / dt : 0;
+          lastScroll = sy;
+          scrollSpeed += (inst - scrollSpeed) * Math.min(1, dt * 5);
+          const boost = Math.min(scrollSpeed / 1400, 4);
+          hwOffset += (4 + boost * 16) * dt;
+          highway.uniforms.uOffset.value = hwOffset;
+          highway.uniforms.uSpeed.value = 0.35 + boost;
+          highway.uniforms.uAmount.value = cur.hw;
+        }
+
+        renderer.render(scene, camera);
+
+        // kotvy popisků pro exploded view
+        if (story.labelsOn) {
+          root.updateMatrixWorld();
+          for (const k of PART_KEYS) {
+            model.anchors[k].getWorldPosition(v3).project(camera);
+            story.anchors[k].x = (v3.x * 0.5 + 0.5) * w;
+            story.anchors[k].y = (-v3.y * 0.5 + 0.5) * h;
+          }
+        }
+
+        if (first) {
+          first = false;
+          loadStore.set(1);
+          document.documentElement.classList.add("scene-ready");
+        }
+
+        // dynamické snížení kvality na slabších zařízeních
+        if (dt > 0 && !reducedMotion) {
+          frames++;
+          slow += dt > 0.024 ? 1 : 0;
+          if (frames === 20) {
+            if (slow > 9 && pixelRatio > 1) {
+              pixelRatio = Math.max(1, pixelRatio - 0.25);
+              renderer.setPixelRatio(pixelRatio);
+              renderer.setSize(w, h, false);
+            }
+            frames = 0;
+            slow = 0;
+          }
+        }
+      }
+
+      // smyčka běží jen když je karta aktivní
+      let running = false;
+      let skip = false;
+      const wake = () => {
+        window.removeEventListener("scroll", wake);
+        sync();
+      };
+      const sync = () => {
+        running = !document.hidden && !reducedMotion;
+        renderer.setAnimationLoop(
+          running
+            ? (time: number) => {
+                // mimo záběr (disk skrytý) renderer úplně zastavíme a probudí ho až scroll
+                if (cur.o < 0.01 && story.target.o < 0.01) {
+                  renderer.setAnimationLoop(null);
+                  running = false;
+                  window.addEventListener("scroll", wake, { passive: true });
+                  return;
+                }
+                // lite zařízení kreslí 30 fps
+                if (lite) {
+                  skip = !skip;
+                  if (skip) return;
+                }
+                timer.update(time);
+                draw(Math.min(timer.getDelta(), 0.05));
+              }
+            : null,
+        );
+      };
+      document.addEventListener("visibilitychange", sync);
+
+      // shadery se kompilují asynchronně (paralelně mimo hlavní vlákno), první snímek pak neblokuje
+      root.updateMatrixWorld();
+      if (renderer.extensions.has("KHR_parallel_shader_compile")) await renderer.compileAsync(scene, camera);
+      if (disposed) {
+        model.dispose();
+        highway.dispose();
+        return;
+      }
+
+      const ro = new ResizeObserver(resize);
+      ro.observe(el);
+      resize();
+      if (reducedMotion) draw(0);
+      else window.addEventListener("pointermove", onMove, { passive: true });
+      sync();
+
+      inner = () => {
+        renderer.setAnimationLoop(null);
+        ro.disconnect();
+        unsubCap();
+        unsubSink();
+        document.removeEventListener("visibilitychange", sync);
+        window.removeEventListener("pointermove", onMove);
+        model.dispose();
+        highway.dispose();
+        shadow.geometry.dispose();
+        (shadow.material as THREE.Material).dispose();
+        shadowTex.dispose();
+        env?.dispose();
+        pmrem.dispose();
+        renderer.dispose();
+        renderer.domElement.remove();
+      };
+    })();
 
     return () => {
-      renderer.setAnimationLoop(null);
-      ro.disconnect();
-      unsubCap();
-      unsubSink();
-      document.removeEventListener("visibilitychange", sync);
-      window.removeEventListener("pointermove", onMove);
-      model.dispose();
-      highway.dispose();
-      shadow.geometry.dispose();
-      (shadow.material as THREE.Material).dispose();
-      shadowTex.dispose();
-      env.dispose();
-      pmrem.dispose();
-      renderer.dispose();
-      renderer.domElement.remove();
+      disposed = true;
+      document.documentElement.classList.remove("scene-ready");
+      inner?.();
+      if (!inner) {
+        studio.dispose();
+        pmrem.dispose();
+        renderer.dispose();
+        renderer.domElement.remove();
+      }
     };
   }, [accent, brand, capacities, lite, reducedMotion]);
 

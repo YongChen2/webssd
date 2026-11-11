@@ -4,7 +4,6 @@
   --color-bg: #050507;
   --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -104,6 +103,9 @@ html.preloading .rise {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
+  }
   .motion-only {
     display: none;
   }
@@ -245,4 +247,25 @@ html.preloading .rise {
   ::view-transition-new(*) {
     animation: none !important;
   }
+}
+
+/* poster disku v hero (jen na šířku; na výšku je disk diagonální a poster by nesedl) */
+.hero-poster {
+  display: none;
+  position: absolute;
+  left: calc(50% - 1.91vw);
+  top: calc(70% - 15vw);
+  width: 56.3vw;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 1.4s var(--ease-fluid);
+}
+@media (min-aspect-ratio: 9/10) {
+  .hero-poster {
+    display: block;
+  }
+}
+.scene-ready .hero-poster {
+  opacity: 0;
 }

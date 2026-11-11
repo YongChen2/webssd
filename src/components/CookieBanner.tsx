@@ -1,17 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { consentStore, restoreConsent, setConsent } from "@/lib/consent";
 import { useStore } from "@/lib/store";
 
 /** Cookie lišta: odmítnutí je stejně snadné jako souhlas, analytika až po souhlasu. */
 export function CookieBanner() {
   const consent = useStore(consentStore);
+  const [late, setLate] = useState(false);
   useEffect(() => {
     restoreConsent();
+    // lišta se ukáže až po úvodním načtení, ať nesoutěží s hero o první vykreslení
+    const t = window.setTimeout(() => setLate(true), 5000);
+    return () => clearTimeout(t);
   }, []);
-  if (consent !== "unset") return null;
+  if (consent !== "unset" || !late) return null;
   return (
     <div
       role="dialog"

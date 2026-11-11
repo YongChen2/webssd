@@ -99,11 +99,12 @@ export function StoryDriver() {
         techTrigger = ScrollTrigger.create({
           trigger: tech,
           start: "top top",
-          end: mobile ? "+=240%" : "+=300%",
+          end: mobile ? "+=170%" : "+=300%",
           pin: true,
           anticipatePin: 1,
           onToggle: (self) => {
             story.labelsOn = self.isActive;
+            story.labelsListeners.forEach((l) => l());
             if (!self.isActive) {
               story.extraYaw = self.progress > 0.5 ? 0.45 : -0.45;
               story.explode = 0;
@@ -144,6 +145,7 @@ export function StoryDriver() {
         Object.assign(story.target, HERO_POSE);
         story.explode = 0;
         story.labelsOn = false;
+        story.labelsListeners.forEach((l) => l());
       };
     });
 
