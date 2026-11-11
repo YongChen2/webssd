@@ -1,22 +1,26 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { consentStore, restoreConsent, setConsent } from "@/lib/consent";
 import { useStore } from "@/lib/store";
 
 /** Cookie lišta: odmítnutí je stejně snadné jako souhlas, analytika až po souhlasu. */
 export function CookieBanner() {
   const consent = useStore(consentStore);
+  const [late, setLate] = useState(false);
   useEffect(() => {
     restoreConsent();
+    // lišta se ukáže až po úvodním načtení, ať nesoutěží s hero o první vykreslení
+    const t = window.setTimeout(() => setLate(true), 5000);
+    return () => clearTimeout(t);
   }, []);
-  if (consent !== "unset") return null;
+  if (consent !== "unset" || !late) return null;
   return (
     <div
       role="dialog"
       aria-label="Nastavení cookies"
-      className="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-[28rem] rounded-3xl bg-[#0b0b10]/95 p-5 ring-1 ring-white/12 backdrop-blur-xl md:inset-x-auto md:bottom-6 md:left-6 md:mx-0"
+      className="fixed inset-x-3 bottom-3 z-[60] mx-auto max-w-[28rem] rounded-3xl bg-[#0b0b10]/95 p-5 ring-1 ring-white/12 md:inset-x-auto md:bottom-6 md:left-6 md:mx-0"
     >
       <p className="text-[14px] font-medium text-white">Cookies</p>
       <p className="mt-1.5 text-[13px] leading-relaxed text-white/55">

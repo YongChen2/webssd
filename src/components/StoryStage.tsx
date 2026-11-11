@@ -17,6 +17,13 @@ export function StoryStage() {
 
   useEffect(() => {
     const start = () => {
+      const weak = (navigator.hardwareConcurrency ?? 8) <= 2;
+      if (weak) {
+        // velmi slabé zařízení: bez 3D, zůstane statický poster
+        document.documentElement.classList.add("tier-low");
+        loadStore.set(1);
+        return;
+      }
       setScene({
         lite: window.matchMedia("(max-width: 767px)").matches || (navigator.hardwareConcurrency ?? 8) <= 4,
         reduced: window.matchMedia("(prefers-reduced-motion: reduce)").matches,

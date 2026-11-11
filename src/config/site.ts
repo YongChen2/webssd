@@ -2,16 +2,24 @@
  * Jediné místo, kde se mění značka, texty, ceny a firemní údaje.
  * Vše označené ZÁSTUPNÉ / TODO nahraď reálnými údaji před spuštěním.
  */
+/** Česky správný tvar: 1 rok, 2–4 roky, 5+ let. */
+export const yearsText = (n: number) => `${n} ${n === 1 ? "rok" : n >= 2 && n <= 4 ? "roky" : "let"}`;
+
+/** Délka záruky – jediné místo, odkud ji čte celý web. */
+const WARRANTY_YEARS = 2;
+
 export const site = {
   brand: "VELOR", // TODO ZÁSTUPNÉ – [NÁZEV ZNAČKY]
   slogan: "Rychlost, která nečeká.", // TODO ZÁSTUPNÉ – [SLOGAN]
   description:
-    "NVMe M.2 SSD nové generace. Až 7 400 MB/s, chlazení z jednoho kusu hliníku, pět let záruka.",
+    "NVMe M.2 SSD nové generace. Až 7 400 MB/s, chlazení z jednoho kusu hliníku, záruka " + yearsText(WARRANTY_YEARS) + ".",
   accent: "#3B82F6", // [BARVA]
   // TODO: po připojení vlastní domény nastav NEXT_PUBLIC_SITE_URL (Vercel → Settings → Environment Variables)
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://webssd-five.vercel.app",
   /** TODO: URL skutečného košíku / e-shopu. Dokud je null, tlačítka „Koupit“ vedou na kontakt v patičce. */
   checkoutUrl: null as string | null,
+  /** Dokud jsou ceny a parametry zástupné, web je označuje jako orientační a nevypisuje je do JSON-LD. Po ověření nastav true. */
+  dataVerified: false as boolean,
 
   product: {
     name: "VELOR X1", // TODO ZÁSTUPNÉ
@@ -19,14 +27,21 @@ export const site = {
     interfaceLabel: "PCIe 4.0 NVMe · M.2 2280",
     readSpeed: 7400, // MB/s
     writeSpeed: 6900, // MB/s – TODO ZÁSTUPNÉ
-    warrantyYears: 5, // TODO ZÁSTUPNÉ
+    warrantyYears: WARRANTY_YEARS,
+    warrantyText: yearsText(WARRANTY_YEARS),
   },
 
-  /** TODO: ZÁSTUPNÉ CENY v Kč včetně DPH – nahraď skutečným ceníkem. */
+  /** Varianty disku: s chladičem / bez chladiče. */
+  variants: {
+    sink: { label: "S chladičem", short: "s chladičem", hint: "Do stolního PC a PlayStation 5." },
+    bare: { label: "Bez chladiče", short: "bez chladiče", hint: "Do notebooků a základních desek s vlastním chladičem." },
+  },
+
+  /** TODO: ZÁSTUPNÉ CENY v Kč včetně DPH pro obě varianty – nahraď skutečným ceníkem. */
   models: [
-    { capacity: "1 TB", price: 2490, tbw: "700 TBW" }, // TODO ZÁSTUPNÁ CENA
-    { capacity: "2 TB", price: 4290, tbw: "1 400 TBW" }, // TODO ZÁSTUPNÁ CENA
-    { capacity: "4 TB", price: 7990, tbw: "2 800 TBW" }, // TODO ZÁSTUPNÁ CENA
+    { capacity: "1 TB", prices: { sink: 2490, bare: 2190 }, tbw: "700 TBW" }, // TODO ZÁSTUPNÉ CENY
+    { capacity: "2 TB", prices: { sink: 4290, bare: 3890 }, tbw: "1 400 TBW" }, // TODO ZÁSTUPNÉ CENY
+    { capacity: "4 TB", prices: { sink: 7990, bare: 7390 }, tbw: "2 800 TBW" }, // TODO ZÁSTUPNÉ CENY
   ],
   defaultModel: 1,
 
@@ -38,7 +53,49 @@ export const site = {
     email: "[e-mail]",
     phone: "[telefon]",
     register: "[Zápis v obchodním rejstříku]",
+    complaintAddress: "[Adresa pro reklamace]", // TODO doplnit
   },
+
+  /** Údaje pro právní stránky – vyplň na jednom místě. */
+  legal: {
+    updated: "[datum účinnosti]",
+    payment: "[platební metody, např. karta, převod, dobírka]",
+    shipping: "[cena dopravy a platby]",
+    deliveryTime: "[dodací lhůta]",
+    carrier: "[dopravce]",
+    processors: "[konkrétní zpracovatelé]",
+    odrUrl: "https://ec.europa.eu/consumers/odr",
+  },
+
+  /** Datasheet ke stažení – zatím placeholder (null). Až bude PDF, dej cestu např. "/velor-x1-datasheet.pdf". */
+  datasheetUrl: null as string | null,
+
+  /** Ikony důvěry. Texty jsou zástupné, upravit podle reality. */
+  trust: [
+    { id: "warranty", title: `Záruka ${yearsText(WARRANTY_YEARS)}`, text: "Na výrobní vady i opotřebení do limitu TBW." },
+    { id: "support", title: "Podpora v češtině", text: "Poradíme s výběrem i instalací." },
+    { id: "delivery", title: "Rychlé doručení", text: "Odesíláme co nejdřív po potvrzení objednávky." },
+    { id: "returns", title: "Vrácení do 14 dnů", text: "Bez udání důvodu, podle obchodních podmínek." },
+  ],
+
+  /** Srovnání s typickými disky (bez značek). Orientační typické hodnoty. */
+  comparison: {
+    cols: ["VELOR X1", "Běžný NVMe (PCIe 3.0)", "Běžný SATA SSD"],
+    rows: [
+      ["Rozhraní", "PCIe 4.0 x4", "PCIe 3.0 x4", "SATA III"],
+      ["Sekvenční čtení", "až 7 400 MB/s", "typicky ~3 500 MB/s", "typicky ~550 MB/s"],
+      ["Sekvenční zápis", "až 6 900 MB/s", "typicky ~3 000 MB/s", "typicky ~520 MB/s"],
+      ["Chladič", "Součástí (nebo bez)", "Zřídka", "Není potřeba"],
+      ["Formát", "M.2 2280", "M.2 2280", "2,5″"],
+      ["Záruka", yearsText(WARRANTY_YEARS), "typicky 3–5 let", "typicky 3–5 let"],
+    ] as string[][],
+  },
+
+  install: [
+    { title: "Vypni a otevři", text: "Vypni počítač, odpoj napájení a najdi slot M.2." },
+    { title: "Zasuň disk", text: "Vlož disk do slotu pod úhlem asi 30° a lehce přitlač." },
+    { title: "Zajisti šroubkem", text: "Přitlač disk dolů a zajisti ho šroubkem. Hotovo." },
+  ],
 
   nav: [
     { label: "Technologie", href: "#technologie", id: "technologie" },
@@ -74,7 +131,7 @@ export const site = {
     {
       id: "ps5",
       title: "PlayStation 5",
-      text: "Splňuje požadavky Sony na rozšiřující úložiště. Chladič je součástí. TODO: ověřit výšku vůči specifikaci Sony.",
+      text: "Splňuje požadavky Sony na rozšiřující úložiště. Chladič je součástí. Kompatibilita je orientační, před koupí ověř aktuální požadavky Sony.",
     },
     {
       id: "laptop",
@@ -92,7 +149,7 @@ export const site = {
     ["Sekvenční zápis", "až 6 900 MB/s"],
     ["Paměť NAND", "3D TLC, 176 vrstev"],
     ["Chlazení", "Hliníkový chladič + grafenová vrstva"],
-    ["Záruka", "5 let"],
+    ["Záruka", yearsText(WARRANTY_YEARS)],
   ] as [string, string][],
   specsFull: [
     ["Náhodné čtení 4K", "až 1 100 000 IOPS"],
@@ -119,7 +176,7 @@ export const site = {
     },
     {
       q: "Jaká je záruka?",
-      a: "Na disk poskytujeme záruku 5 let. Spotřebitelům navíc zůstává zákonná odpovědnost za vady, viz stránka Reklamace a záruka.",
+      a: `Na disk poskytujeme záruku ${yearsText(WARRANTY_YEARS)}. Spotřebitelům zůstávají zachována zákonná práva z vadného plnění, viz stránka Reklamace a záruka.`,
     },
     {
       q: "Jak rychlý disk skutečně je?",
@@ -146,6 +203,14 @@ export const site = {
   /** Ilustrativní teploty v zátěži (°C) – TODO nahradit naměřenými hodnotami. */
   thermal: { without: 89, with: 52 },
 } as const;
+
+/** Kam míří „Koupit“: košík, a dokud není, poptávkový formulář. */
+export const buyHref = site.checkoutUrl ?? "#poptavka";
+/** Je kontaktní e-mail skutečný (ne zástupný)? */
+export const hasEmail = site.company.email.includes("@");
+
+export const priceOf = (m: { prices: { sink: number; bare: number } }, sink: boolean) => (sink ? m.prices.sink : m.prices.bare);
+export const variantShort = (sink: boolean) => (sink ? site.variants.sink.short : site.variants.bare.short);
 
 export type SiteModel = (typeof site.models)[number];
 

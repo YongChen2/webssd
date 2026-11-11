@@ -18,6 +18,7 @@ function Labels() {
     let raf = 0;
     const W = () => window.innerWidth;
     const loop = () => {
+      raf = 0;
       const w = W();
       const mobile = w < 768;
       const p = story.techProgress;
@@ -75,10 +76,17 @@ function Labels() {
           }
         }
       }
-      raf = requestAnimationFrame(loop);
+      // smyčka běží jen při aktivním pinu; po jeho konci proběhne ještě jeden průchod a zastaví se
+      if (story.labelsOn) raf = requestAnimationFrame(loop);
     };
-    raf = requestAnimationFrame(loop);
-    return () => cancelAnimationFrame(raf);
+    const wake = () => {
+      if (!raf) raf = requestAnimationFrame(loop);
+    };
+    story.labelsListeners.add(wake);
+    return () => {
+      story.labelsListeners.delete(wake);
+      cancelAnimationFrame(raf);
+    };
   }, []);
 
   return (

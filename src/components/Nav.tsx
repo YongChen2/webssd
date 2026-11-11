@@ -36,7 +36,7 @@ export function Nav() {
     <header className="fixed inset-x-0 top-4 z-50 flex flex-col items-center px-4 md:top-6">
       <nav
         aria-label="Hlavní navigace"
-        className="flex items-center gap-4 rounded-full bg-black/30 py-1.5 pl-5 pr-1.5 ring-1 ring-white/10 backdrop-blur-xl md:gap-7 md:pl-6"
+        className="flex items-center gap-4 rounded-full bg-[#0b0b10]/85 py-1.5 pl-5 pr-1.5 ring-1 ring-white/10 md:gap-7 md:pl-6"
       >
         <Link href="/" className="text-[13px] font-medium tracking-[0.32em] text-white" onClick={() => setOpen(false)}>
           {site.brand}
@@ -81,7 +81,7 @@ export function Nav() {
       <div
         id="mobile-menu"
         inert={!open}
-        className={`mt-2 w-full max-w-sm origin-top rounded-3xl bg-black/70 p-2 ring-1 ring-white/10 backdrop-blur-xl transition-[opacity,transform] duration-500 ease-fluid md:hidden ${
+        className={`mt-2 w-full max-w-sm origin-top rounded-3xl bg-[#0b0b10]/95 p-2 ring-1 ring-white/10 transition-[opacity,transform] duration-500 ease-fluid md:hidden ${
           open ? "scale-100 opacity-100" : "pointer-events-none scale-95 opacity-0"
         }`}
       >

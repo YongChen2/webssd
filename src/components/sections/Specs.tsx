@@ -53,7 +53,16 @@ export function Specs() {
           {open ? "Skrýt kompletní parametry" : "Zobrazit kompletní parametry"}
           <span aria-hidden className={`transition-transform duration-500 ${open ? "rotate-180" : ""}`}>↓</span>
         </button>
-        {/* TODO: ZÁSTUPNÉ parametry (TBW, MTBF, IOPS, spotřeba, rozměry) – ověřit podle datasheetu, viz site.specsFull */}
+        {site.datasheetUrl ? (
+          <a href={site.datasheetUrl} download className="ml-3 mt-8 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] text-white/75 ring-1 ring-white/15 hover:text-white hover:ring-white/40">
+            Stáhnout datasheet (PDF)
+          </a>
+        ) : (
+          <span aria-disabled="true" className="ml-3 mt-8 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[13px] text-white/45 ring-1 ring-white/10">
+            Datasheet (PDF) připravujeme
+          </span>
+        )}
+        {!site.dataVerified && <p className="mt-6 text-[12px] text-white/55">Uvedené parametry jsou orientační.</p>}
       </div>
     </section>
   );

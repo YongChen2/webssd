@@ -39,6 +39,8 @@ export const story = {
   techProgress: 0,
   /** je exploded view aktivní → projektovat kotvy popisků */
   labelsOn: false,
+  /** posluchači změny labelsOn (popisky počítají polohy jen při aktivním pinu) */
+  labelsListeners: new Set<() => void>(),
   /** čas posledního „cvaknutí“ (ms, performance.now) */
   pulseAt: -1e9,
   anchors: Object.fromEntries(PART_KEYS.map((k) => [k, { x: 0, y: 0 }])) as Record<PartKey, { x: number; y: number }>,

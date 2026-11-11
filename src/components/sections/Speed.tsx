@@ -124,7 +124,7 @@ function Compare() {
   }, [gb, run]);
 
   return (
-    <div ref={box} className="rounded-[2rem] bg-white/[0.035] p-5 ring-1 ring-white/10 backdrop-blur-sm md:p-8">
+    <div ref={box} className="rounded-[2rem] bg-white/[0.035] p-5 ring-1 ring-white/10 md:p-8">
       <div className="flex flex-wrap items-end justify-between gap-5">
         <div>
           <p className="text-[11px] uppercase tracking-[0.22em] text-white/55">Kopírování dat</p>

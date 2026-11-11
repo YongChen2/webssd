@@ -4,7 +4,6 @@ import Link from "next/link";
 import { site } from "@/config/site";
 import { resetConsent } from "@/lib/consent";
 
-// TODO: doplnit údaje provozovatele v site.company (IČO, sídlo, kontakt, zápis v rejstříku)
 export function Footer() {
   const c = site.company;
   return (

@@ -425,7 +425,8 @@ export function buildSsd({ accent, brand, capacity, lite }: Options): SsdModel {
 
   const layout = (e: number, ho: number) => {
     for (const [obj, lift, d] of stack) {
-      const ei = (e - d) / (1 - d);
+      // při e ≤ 0 (složeno / přeběh „cvaknutí“) žádné zpoždění, jinak by se vrstvy propadly pod desku
+      const ei = e >= 0 ? Math.max(0, (e - d) / (1 - d)) : e * 0.5;
       const off = cooler.has(obj) ? ho * 5 : 0;
       obj.position.y = ei * lift + off;
       obj.visible = !(cooler.has(obj) && ho > 0.985);

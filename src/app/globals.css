@@ -4,7 +4,6 @@
   --color-bg: #050507;
   --color-accent: var(--accent);
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
   --ease-fluid: cubic-bezier(0.32, 0.72, 0, 1);
 }
 
@@ -104,6 +103,9 @@ html.preloading .rise {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .preloader {
+    display: none;
+  }
   .motion-only {
     display: none;
   }
@@ -116,22 +118,18 @@ html.preloading .rise {
 .js .reveal {
   opacity: 0;
   transform: translateY(26px);
-  filter: blur(6px);
   transition:
     opacity 1s var(--ease-fluid) var(--rd, 0ms),
-    transform 1s var(--ease-fluid) var(--rd, 0ms),
-    filter 1s var(--ease-fluid) var(--rd, 0ms);
+    transform 1s var(--ease-fluid) var(--rd, 0ms);
 }
 .js .reveal[data-in] {
   opacity: 1;
   transform: none;
-  filter: none;
 }
 @media (prefers-reduced-motion: reduce) {
   .js .reveal {
     opacity: 1;
     transform: none;
-    filter: none;
     transition: none;
   }
 }
@@ -139,11 +137,10 @@ html.preloading .rise {
 /* 3D tilt karty */
 .tilt-card {
   transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
-  transition:
-    transform 0.5s var(--ease-fluid),
-    box-shadow 0.7s var(--ease-fluid),
-    background-color 0.7s var(--ease-fluid);
-  will-change: transform;
+  transition: transform 0.5s var(--ease-fluid);
+}
+.tilt-card:hover {
+  will-change: transform; /* jen dočasně při hoveru */
 }
 @media (prefers-reduced-motion: reduce) {
   .tilt-card {
@@ -245,4 +242,102 @@ html.preloading .rise {
   ::view-transition-new(*) {
     animation: none !important;
   }
+}
+
+/* poster disku v hero (jen na šířku; na výšku je disk diagonální a poster by nesedl) */
+.hero-poster {
+  display: none;
+  position: absolute;
+  left: calc(50% - 1.91vw);
+  top: calc(70% - 15vw);
+  width: 56.3vw;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 1.4s var(--ease-fluid);
+}
+@media (min-aspect-ratio: 9/10) {
+  .hero-poster {
+    display: block;
+  }
+}
+.scene-ready .hero-poster {
+  opacity: 0;
+}
+
+/* nízký tier výkonu: statické rozložení bez pinu a živého 3D */
+.tier-low .motion-only {
+  display: none;
+}
+.tier-low .reduce-only {
+  display: block;
+}
+.tier-low .tech-section {
+  height: auto;
+  overflow: visible;
+}
+
+/* na dotykových zařízeních bez grainu (blend přes celou obrazovku drhne při scrollu) */
+@media (hover: none) {
+  body::after {
+    display: none;
+  }
+}
+
+/* poster pro výškovou orientaci (disk je diagonální, střed ve 61 % výšky) */
+.hero-poster-m {
+  display: none;
+  position: absolute;
+  left: calc(50% - 3.6vw);
+  top: calc(61% - 39.2vw);
+  width: 61.5vw;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 1.4s var(--ease-fluid);
+}
+@media (max-aspect-ratio: 9/10) {
+  .hero-poster-m {
+    display: block;
+  }
+}
+.scene-ready .hero-poster-m {
+  opacity: 0;
+}
+
+/* animace návodu k instalaci: jen transform/opacity, spustí se po vstupu do viewportu */
+.inst-slide,
+.inst-screw,
+.inst-pulse {
+  animation-play-state: paused;
+}
+.reveal[data-in] .inst-slide,
+.reveal[data-in] .inst-screw,
+.reveal[data-in] .inst-pulse {
+  animation-play-state: running;
+}
+.inst-slide {
+  animation: inst-slide 3.2s var(--ease-fluid) infinite;
+}
+.inst-screw {
+  animation: inst-screw 3.2s linear infinite;
+}
+.inst-pulse {
+  animation: inst-pulse 2s ease-in-out infinite;
+}
+@keyframes inst-slide {
+  0% { transform: translate(60px, -18px) rotate(-14deg); opacity: 0; }
+  20% { opacity: 1; }
+  60% { transform: translate(0, 0) rotate(0); }
+  100% { transform: translate(0, 0) rotate(0); opacity: 1; }
+}
+@keyframes inst-screw {
+  0%, 40% { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes inst-pulse {
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inst-slide, .inst-screw, .inst-pulse { animation: none; }
 }

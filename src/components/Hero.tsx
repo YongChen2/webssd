@@ -28,7 +28,7 @@ export function Hero() {
   const stats = [
     { value: formatNumber(p.readSpeed), unit: "MB/s", label: "Čtení" },
     { value: formatNumber(p.writeSpeed), unit: "MB/s", label: "Zápis" },
-    { value: String(p.warrantyYears), unit: p.warrantyYears >= 5 ? "let" : "roky", label: "Záruka" },
+    { value: String(p.warrantyYears), unit: p.warrantyText.split(" ")[1], label: "Záruka" },
   ];
 
   return (
@@ -38,6 +38,29 @@ export function Hero() {
         <div className="absolute left-1/2 top-[58%] h-[70vmin] w-[120vmin] -translate-x-1/2 -translate-y-1/2 rounded-[50%] bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--accent)_22%,transparent),transparent)]" />
         <div className="absolute inset-x-0 top-0 h-[45%] bg-[radial-gradient(60%_100%_at_50%_0%,rgba(255,255,255,0.06),transparent)]" />
       </div>
+
+      {/* poster disku: vidět hned, 3D plátno ho překryje (crossfade) */}
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/disk-poster.webp"
+        alt=""
+        aria-hidden
+        width={811}
+        height={486}
+        fetchPriority="high"
+        decoding="async"
+        className="hero-poster"
+      />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/disk-poster-mobile.webp"
+        alt=""
+        aria-hidden
+        width={240}
+        height={294}
+        decoding="async"
+        className="hero-poster-m"
+      />
 
       <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col items-center px-5 pt-[clamp(7rem,17vh,11rem)] text-center md:px-10">
         <p className="rise rounded-full bg-white/[0.04] px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.22em] text-white/60 ring-1 ring-white/10 [--d:0ms]">
