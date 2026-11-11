@@ -1,14 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { buyHref, formatPrice, site } from "@/config/site";
+import { buyHref, priceOf, site, variantShort } from "@/config/site";
+import { AnimatedPrice } from "./AnimatedPrice";
 import { useStore } from "@/lib/store";
-import { capacityStore } from "@/lib/story";
+import { capacityStore, heatSinkStore } from "@/lib/story";
 
 /** Sticky lišta „Koupit“ – objeví se po odscrollování hera, schová se u výběru modelů a patičky. */
 export function StickyBuy() {
   const sel = useStore(capacityStore);
   const m = site.models[sel];
+  const sink = useStore(heatSinkStore);
   const [pastHero, setPastHero] = useState(false);
   const [covered, setCovered] = useState(false);
 
@@ -46,8 +48,8 @@ export function StickyBuy() {
       <div className="flex items-center gap-4 rounded-full bg-[#0b0b10]/90 py-1.5 pl-5 pr-1.5 ring-1 ring-white/12 md:gap-6 md:pl-6">
         <p className="text-[13px] text-white/80">
           <span className="hidden sm:inline">{site.product.name} · </span>
-          {m.capacity}
-          <span className="ml-3 tabular-nums text-white">{formatPrice(m.price)}</span>
+          {m.capacity} · {variantShort(sink)}
+          <AnimatedPrice value={priceOf(m, sink)} className="ml-3 tabular-nums text-white" />
           <span className="ml-1 text-[11px] text-white/55">s DPH</span>
         </p>
         <a

@@ -170,7 +170,10 @@ export default function StoryScene({ accent, brand, capacities, lite, reducedMot
       // adaptivní kvalita: FPS prvních ~2 s určí tier (high / medium / low)
       type Tier = "high" | "medium" | "low";
       let tier: Tier = lite ? "medium" : "high";
-      let measuring = true;
+      // ?tier=high|medium vynutí kvalitu a vypne měření (QA na zařízeních bez GPU)
+      const forced = new URLSearchParams(window.location.search).get("tier");
+      if (forced === "high" || forced === "medium") tier = forced;
+      let measuring = forced !== "high" && forced !== "medium";
       let mStart = 0;
       let mFrames = 0;
       let assessments = 0;

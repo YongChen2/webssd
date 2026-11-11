@@ -1,9 +1,9 @@
 "use client";
 
 import { useState, type FormEvent } from "react";
-import { formatPrice, hasEmail, site } from "@/config/site";
+import { formatPrice, hasEmail, priceOf, site, variantShort } from "@/config/site";
 import { useStore } from "@/lib/store";
-import { capacityStore } from "@/lib/story";
+import { capacityStore, heatSinkStore } from "@/lib/story";
 import { Reveal } from "../Reveal";
 import { SectionHead } from "./SectionHead";
 
@@ -13,6 +13,7 @@ const field =
 /** Poptávka přes mailto, dokud není k dispozici košík (site.checkoutUrl). Žádný vlastní endpoint. */
 export function Inquiry() {
   const sel = useStore(capacityStore);
+  const sink = useStore(heatSinkStore);
   const [status, setStatus] = useState<"idle" | "sent" | "noemail">("idle");
 
   const submit = (e: FormEvent<HTMLFormElement>) => {
@@ -23,14 +24,15 @@ export function Inquiry() {
     }
     const d = new FormData(e.currentTarget);
     const m = site.models[Number(d.get("model"))];
+    const withSink = d.get("variant") === "sink";
     const body = [
       `Jméno: ${d.get("name")}`,
       `E-mail: ${d.get("email")}`,
-      `Model: ${site.product.name} ${m.capacity} (${formatPrice(m.price)} vč. DPH)`,
+      `Model: ${site.product.name} ${m.capacity}, ${variantShort(withSink)} (orientačně ${formatPrice(priceOf(m, withSink))} vč. DPH)`,
       "",
       String(d.get("message") ?? ""),
     ].join("\n");
-    window.location.href = `mailto:${site.company.email}?subject=${encodeURIComponent(`Poptávka ${site.product.name} ${m.capacity}`)}&body=${encodeURIComponent(body)}`;
+    window.location.href = `mailto:${site.company.email}?subject=${encodeURIComponent(`Poptávka ${site.product.name} ${m.capacity} ${variantShort(withSink)}`)}&body=${encodeURIComponent(body)}`;
     setStatus("sent");
   };
 
@@ -66,6 +68,18 @@ export function Inquiry() {
               </select>
             </label>
             <label className="block text-[13px] text-white/60">
+              Varianta
+              <select
+                name="variant"
+                value={sink ? "sink" : "bare"}
+                onChange={(e) => heatSinkStore.set(e.target.value === "sink")}
+                className={field}
+              >
+                <option value="sink" className="bg-[#0b0b10]">{site.variants.sink.label}</option>
+                <option value="bare" className="bg-[#0b0b10]">{site.variants.bare.label}</option>
+              </select>
+            </label>
+            <label className="block text-[13px] text-white/60">
               Zpráva
               <textarea name="message" rows={4} className={field} />
             </label>
@@ -85,6 +99,25 @@ export function Inquiry() {
             <p className="text-[12px] text-white/55">
               Údaje použijeme jen k vyřízení poptávky, viz <a href="/ochrana-osobnich-udaju" className="underline underline-offset-4">ochrana osobních údajů</a>.
             </p>
+          </form>
+        </Reveal>
+        <Reveal className="md:col-start-2">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (!hasEmail) return;
+              const mail = String(new FormData(e.currentTarget).get("email") ?? "");
+              window.location.href = `mailto:${site.company.email}?subject=${encodeURIComponent(`Dej mi vědět o dostupnosti ${site.product.name}`)}&body=${encodeURIComponent(`Prosím o informaci o dostupnosti. Kontakt: ${mail}`)}`;
+            }}
+            className="flex flex-col gap-3 rounded-[2rem] bg-white/[0.035] p-6 ring-1 ring-white/10 sm:flex-row sm:items-end md:p-8"
+          >
+            <label className="block flex-1 text-[13px] text-white/60">
+              Dejte mi vědět o dostupnosti
+              <input name="email" type="email" required autoComplete="email" placeholder="tvuj@email.cz" className={field} />
+            </label>
+            <button type="submit" className="rounded-full bg-white/10 px-6 py-3 text-[14px] text-white ring-1 ring-white/15 transition-colors hover:bg-white/15">
+              Upozornit mě
+            </button>
           </form>
         </Reveal>
       </div>

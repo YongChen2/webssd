@@ -304,3 +304,40 @@ html.preloading .rise {
 .scene-ready .hero-poster-m {
   opacity: 0;
 }
+
+/* animace návodu k instalaci: jen transform/opacity, spustí se po vstupu do viewportu */
+.inst-slide,
+.inst-screw,
+.inst-pulse {
+  animation-play-state: paused;
+}
+.reveal[data-in] .inst-slide,
+.reveal[data-in] .inst-screw,
+.reveal[data-in] .inst-pulse {
+  animation-play-state: running;
+}
+.inst-slide {
+  animation: inst-slide 3.2s var(--ease-fluid) infinite;
+}
+.inst-screw {
+  animation: inst-screw 3.2s linear infinite;
+}
+.inst-pulse {
+  animation: inst-pulse 2s ease-in-out infinite;
+}
+@keyframes inst-slide {
+  0% { transform: translate(60px, -18px) rotate(-14deg); opacity: 0; }
+  20% { opacity: 1; }
+  60% { transform: translate(0, 0) rotate(0); }
+  100% { transform: translate(0, 0) rotate(0); opacity: 1; }
+}
+@keyframes inst-screw {
+  0%, 40% { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
+@keyframes inst-pulse {
+  50% { opacity: 0.25; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .inst-slide, .inst-screw, .inst-pulse { animation: none; }
+}

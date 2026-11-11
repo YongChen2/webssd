@@ -4,6 +4,10 @@ import { StickyBuy } from "@/components/StickyBuy";
 import { StoryStage } from "@/components/StoryStage";
 import { Compat } from "@/components/sections/Compat";
 import { Inquiry } from "@/components/sections/Inquiry";
+import { Comparison } from "@/components/sections/Comparison";
+import { Install } from "@/components/sections/Install";
+import { Quiz } from "@/components/sections/Quiz";
+import { TrustShipping } from "@/components/sections/TrustShipping";
 import { Faq } from "@/components/sections/Faq";
 import { Models } from "@/components/sections/Models";
 import { Reviews } from "@/components/sections/Reviews";
@@ -14,6 +18,15 @@ import { Thermal } from "@/components/sections/Thermal";
 import { site } from "@/config/site";
 
 // Product schema bez recenzí a bez dostupnosti.
+// každá kapacita × varianta (s chladičem / bez) je samostatná nabídka
+const allOffers = site.models.flatMap((m) =>
+  (["sink", "bare"] as const).map((v) => ({
+    name: `${site.product.name} ${m.capacity} ${site.variants[v].short}`,
+    sku: `${site.product.sku}-${m.capacity.replace(" ", "")}-${v === "sink" ? "HS" : "BARE"}`,
+    price: m.prices[v],
+  })),
+);
+
 const productLd = {
   "@context": "https://schema.org",
   "@type": "Product",
@@ -31,10 +44,17 @@ const productLd = {
     offers: {
       "@type": "AggregateOffer",
       priceCurrency: "CZK",
-      lowPrice: Math.min(...site.models.map((m) => m.price)),
-      highPrice: Math.max(...site.models.map((m) => m.price)),
-      offerCount: site.models.length,
-      url: site.url,
+      lowPrice: Math.min(...allOffers.map((o) => o.price)),
+      highPrice: Math.max(...allOffers.map((o) => o.price)),
+      offerCount: allOffers.length,
+      offers: allOffers.map((o) => ({
+        "@type": "Offer",
+        name: o.name,
+        sku: o.sku,
+        price: o.price,
+        priceCurrency: "CZK",
+        url: site.url,
+      })),
     },
   }),
 };
@@ -55,6 +75,10 @@ export default function Home() {
         <Thermal />
         <Models />
         <Compat />
+        <Quiz />
+        <Comparison />
+        <Install />
+        <TrustShipping />
         <Specs />
         <Faq />
         <Reviews />
