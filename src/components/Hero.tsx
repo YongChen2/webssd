@@ -51,6 +51,16 @@ export function Hero() {
         decoding="async"
         className="hero-poster"
       />
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/disk-poster-mobile.webp"
+        alt=""
+        aria-hidden
+        width={240}
+        height={294}
+        decoding="async"
+        className="hero-poster-m"
+      />
 
       <div className="pointer-events-none relative z-10 mx-auto flex w-full max-w-[1400px] flex-1 flex-col items-center px-5 pt-[clamp(7rem,17vh,11rem)] text-center md:px-10">
         <p className="rise rounded-full bg-white/[0.04] px-3.5 py-1.5 text-[10px] font-medium uppercase tracking-[0.22em] text-white/60 ring-1 ring-white/10 [--d:0ms]">

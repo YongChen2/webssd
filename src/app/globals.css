@@ -283,3 +283,24 @@ html.preloading .rise {
     display: none;
   }
 }
+
+/* poster pro výškovou orientaci (disk je diagonální, střed ve 61 % výšky) */
+.hero-poster-m {
+  display: none;
+  position: absolute;
+  left: calc(50% - 3.6vw);
+  top: calc(61% - 39.2vw);
+  width: 61.5vw;
+  height: auto;
+  transform: translateX(-50%);
+  pointer-events: none;
+  transition: opacity 1.4s var(--ease-fluid);
+}
+@media (max-aspect-ratio: 9/10) {
+  .hero-poster-m {
+    display: block;
+  }
+}
+.scene-ready .hero-poster-m {
+  opacity: 0;
+}
